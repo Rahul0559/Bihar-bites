@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout – Bihar Bites</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fafafa;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header, footer {
+      background-color: #2c3e50;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    main {
+      flex: 1;
+      max-width: 1200px;
+      margin: 2rem auto;
+      display: flex;
+      gap: 2rem;
+      padding: 0 1rem;
+      flex-wrap: wrap;
+    }
+    .product-panel, .form-panel {
+      flex: 1 1 400px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+    }
+    .product-panel {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    .product-panel img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+    .product-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .product-info h2 {
+      font-size: 1.6rem;
+      color: #2c3e50;
+    }
+    .price-label {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #e74c3c;
+    }
+    label {
+      font-weight: 600;
+      margin-top: 1rem;
+      display: block;
+    }
+    input[type=number], input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-top: 0.25rem;
+    }
+    .total-price {
+      margin-top: 1rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    button[type="submit"] {
+      margin-top: 1.5rem;
+      background-color: #2c3e50;
+      color: white;
+      padding: 0.75rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button[type="submit"]:hover {
+      background-color: #1a2a3a;
+    }
+    .message {
+      margin-top: 1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    @media (max-width: 800px) {
+      main { flex-direction: column; }
+      .product-panel, .form-panel { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>Bihar Bites - Checkout</header>
+
+  <main>
+    <section class="product-panel" aria-label="Product details">
+      <img id="productImage" src="" alt="Product Image" />
+      <div class="product-info">
+        <h2 id="productTitle">Loading...</h2>
+        <p id="productDescription"></p>
+        <p><span class="price-label">Price:</span> ₹<span id="productPrice">0.00</span></p>
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" min="1" value="1" required />
+        <p class="total-price"><strong>Total:</strong> ₹<span id="totalPrice">0.00</span></p>
+      </div>
+    </section>
+
+    <section class="form-panel" aria-label="Customer information form">
+      <form id="orderForm" novalidate>
+        <label for="customerName">Full Name</label>
+        <input type="text" id="customerName" name="customerName" required placeholder="Your full name" />
+
+        <label for="customerEmail">Email Address</label>
+        <input type="email" id="customerEmail" name="customerEmail" required placeholder="you@example.com" />
+
+        <label for="customerAddress">Address</label>
+        <textarea id="customerAddress" name="customerAddress" required placeholder="Your full delivery address"></textarea>
+
+        <label for="paymentMethod">Payment Method</label>
+        <select id="paymentMethod" name="paymentMethod" required>
+          <option value="" disabled selected>Select a payment method</option>
+          <option value="cod">Cash on Delivery</option>
+          <option value="upi">UPI</option>
+          <option value="card">Credit/Debit Card</option>
+          <option value="netbanking">Net Banking</option>
+        </select>
+
+        <button type="submit">Place Order</button>
+      </form>
+      <p id="responseMsg" class="message" role="alert" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer>&copy; 2025 Bihar Bites. All rights reserved.</footer>
+
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    // ✅ REPLACE with your actual EmailJS public key
+    emailjs.init('YOUR_PUBLIC_KEY');
+
+    const params = new URLSearchParams(window.location.search);
+    const productImage = document.getElementById("productImage");
+    const productTitle = document.getElementById("productTitle");
+    const productDescription = document.getElementById("productDescription");
+    const productPrice = document.getElementById("productPrice");
+    const totalPrice = document.getElementById("totalPrice");
+    const quantityInput = document.getElementById("quantity");
+
+    const pricePerUnit = parseFloat(params.get("price")) || 0;
+
+    productImage.src = params.get("image") || "placeholder.jpg";
+    productImage.alt = params.get("title") || "Product Image";
+    productTitle.textContent = params.get("title") || "Unknown Item";
+    productDescription.textContent = params.get("description") || "";
+    productPrice.textContent = pricePerUnit.toFixed(2);
+
+    function updateTotal() {
+      const qty = parseInt(quantityInput.value) || 1;
+      totalPrice.textContent = (qty * pricePerUnit).toFixed(2);
+    }
+
+    updateTotal();
+    quantityInput.addEventListener("input", updateTotal);
+
+    const orderForm = document.getElementById('orderForm');
+    const responseMsg = document.getElementById('responseMsg');
+
+    orderForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = orderForm.customerName.value.trim();
+      const email = orderForm.customerEmail.value.trim();
+      const address = orderForm.customerAddress.value.trim();
+      const payment = orderForm.paymentMethod.value;
+      const qty = parseInt(quantityInput.value) || 1;
+      const total = (qty * pricePerUnit).toFixed(2);
+      const food = `${params.get("title")} x ${qty} = ₹${total}`;
+
+      if (!name || !email || !address || !payment) {
+        responseMsg.style.color = "red";
+        responseMsg.textContent = "Please fill in all required fields.";
+        return;
+      }
+
+      const templateParams = { name, email, address, payment, food };
+
+      // ✅ REPLACE these values with your EmailJS info
+      emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+        .then(() => {
+          responseMsg.style.color = "green";
+          responseMsg.textContent = "Order placed! A confirmation email has been sent.";
+          orderForm.reset();
+          quantityInput.value = "1";
+          updateTotal();
+        })
+        .catch((error) => {
+          console.error('EmailJS Error:', error);
+          responseMsg.style.color = "red";
+          responseMsg.textContent = "Failed to place order. Please try again.";
+        });
+    });
+  </script>
+</body>
+</html>
